@@ -1,0 +1,5 @@
+<launch>
+	<node name ="graph_slam" pkg = "graph_slam/scripts" type = "tf_broadcaster.py" >
+	<param name = "filename" type="string" value="bmap.dat"/>
+	</node>
+</launch>

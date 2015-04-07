@@ -1,0 +1,7 @@
+<launch>
+
+<node pkg = "depth_image_proc/convert_metric" type="depth_image_proc::ConvertMetricNodelet" name="convert">
+<remap from="image_raw" to="/camera/depth/image"/>
+</node>
+
+</launch>
