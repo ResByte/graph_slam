@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   tf
   pcl_ros
+  cmake_modules
+  octomap
 )
 find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
@@ -89,12 +91,12 @@ find_package(Boost REQUIRED)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS include
+#catkin_package(
+#  INCLUDE_DIRS include
 #  LIBRARIES graph_slam
 #  CATKIN_DEPENDS pcl_ros roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
-)
+#)
 
 ###########
 ## Build ##
@@ -108,6 +110,7 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  
 )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -119,13 +122,13 @@ add_definitions(${PCL_DEFINITIONS})
 ## Declare a cpp executable
 #add_executable(graph_slam_node src/odomProcessor.cpp src/pointCloudProcessor.cpp src/poseGraph.cpp src/example_node.cpp)
 #add_executable(graph_slam_node src/node.cpp)
-add_executable(graph_slam_node src/local_maps.cpp)
+add_executable(graph_slam_node src/local_node.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(graph_slam_node graph_slam_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(graph_slam_node
+target_link_libraries(graph_slam_node
    ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${PCL_LIBRARIES}
