@@ -97,12 +97,7 @@ class Node{
 			double score;
 		};
 		
-		/* store odometry values */
-		struct odometry_{
-			double pose_x;
-			double pose_y;
-			double yaw;
-		};
+		/* store odometry values--> update use std::vector */
 		
 		/* Graph type and definitions */
 		typedef boost::adjacency_list<boost::listS,boost::vecS, boost::undirectedS,pose_, constraints_> Graph;
