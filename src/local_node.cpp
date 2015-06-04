@@ -65,9 +65,9 @@ using namespace std;
 /* callback function for cloud msg */
 
 class Node{
-	public:
-		float threshold_distance; 
-		ros::NodeHandle nh;
+    public:
+        float threshold_distance; 
+        ros::NodeHandle nh;
 		ros::Subscriber odom;
 		ros::Subscriber cloud;
 		ros::Publisher octo_pub; // publisher for octomap
@@ -98,7 +98,7 @@ class Node{
 		};
 		
 		/* store odometry values */
-		struct odometry{
+		struct odometry_{
 			double pose_x;
 			double pose_y;
 			double yaw;
@@ -120,17 +120,17 @@ class Node{
 		
 		/* procees odometry data to get 2D pose */
 		void odomCallbk(nav_msgs::Odometry odom_data);
+    
+                /* Get Point Cloud data */
+                void cloudSub();
 		
-		/* Get Point Cloud data */
-		void cloudSub();
-		
-		/* process point cloud data */ 
-		void cloudCallbk(sensor_msgs::PointCloud2 msg);
+                /* process point cloud data */ 
+                void cloudCallbk(sensor_msgs::PointCloud2 msg);
 		
 		/* calculate Transform between two point clouds */ 
 		Eigen::Matrix4f estTrans(pcl::PointCloud<pcl::PointXYZ> first,pcl::PointCloud<pcl::PointXYZ> second);	
-		pcl::PointCloud<pcl::PointXYZ> randomSample(pcl::PointCloud<pcl::PointXYZ> in_cld);
-	
+                /* Random sampling of points */
+                pcl::PointCloud<pcl::PointXYZ> randomSample(pcl::PointCloud<pcl::PointXYZ> in_cld);
 		void detectLoopClosure(Vertex curr_v);
 		/* calculate distance travelled */ 
 		double calculateDist(vector<double> curr_odom,vector<double> prev_odom);
@@ -144,9 +144,12 @@ class Node{
 		/* Initialize graph */ 
 		void initGraph(int v,std::vector<double> odom);
 
+                /* Generic subscribing script */
 		void getData();
+                /* For Octomap publishing and display on Rviz  */
 		std_msgs::ColorRGBA getColorByHeight(double h);
 		void publishOctomap(octomap::OcTree* map);
+		double evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target);
 	};
 	
 /* Callback function for odom subscriber */	
@@ -408,6 +411,16 @@ void Node::publishOctomap(octomap::OcTree* tree_map){
 	
     this->octo_pub.publish(msg) ;
 }
+
+double Node::evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target){
+
+	/* evaluate the validity of edge transforms */
+			
+	pcl::registration::TransformationValidationEuclidean<pcl::PointXYZ, pcl::PointXYZ> tve;
+	tve.setMaxRange (0.1); // 1cm
+	double score = tve.validateTransformation (source, target, tr_mat);
+	return score;		
+}
 		
 /* main node process as well as constructor*/ 
 Node::Node()
@@ -469,18 +482,8 @@ Node::Node()
 			octomap::point3d origin(float(pose_x),float(pose_y),0.0f);
 			octomap::pose6d pose(float(pose_x),float(pose_y),0.0f,float(roll),float(pitch),float(yaw));
 			tree->insertPointCloud(oct_pc,origin,pose,-1,false,false);
-			/* evaluate the validity of edge transforms */
-			/*
-			pcl::registration::TransformationValidationEuclidean<pcl::PointXYZ, pcl::PointXYZ> tve;
-			tve.setMaxRange (0.1); // 1cm
-			pcl::PointCloud<pcl::PointXYZ>::Ptr source (new pcl::PointCloud<pcl::PointXYZ>);
-			*source = prev_cld;
-			pcl::PointCloud<pcl::PointXYZ>::Ptr target (new pcl::PointCloud<pcl::PointXYZ>);
-			*target = curr_pc;
-			double score = tve.validateTransformation (source, target, tr_mat);
-			cout<<score<<"<--Tr score"<<endl;
-			*/
-			
+			std::cout<<"publishing octomap as MarkerArray"<<std::endl;
+			this->publishOctomap(tree);
 			boost::tie(vertex_i, vertex_e) = boost::vertices(gr);
 			this->addEdge(tr_mat,0.000);
 			this->detectLoopClosure(*(vertex_e-1));
