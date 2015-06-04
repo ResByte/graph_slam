@@ -421,76 +421,76 @@ double Node::evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target){
 /* main node process as well as constructor*/ 
 Node::Node()
 {	
-	this->tree = new octomap::OcTree(res);
-	pcl::PointCloud<pcl::PointXYZ> prev_pc; // one step buffer for clouds comparision
-	int count = 1; // counter for key of the vertex
-	threshold_distance=0.15; // thesholding for the distance travelled
-	std::vector<double> curr_odom; // vector for current value of odometry
-	this->octo_pub = nh.advertise<visualization_msgs::MarkerArray>("/map_vis", 1);
-	// Initialize the first values 
-	if (count ==1)
+    this->tree = new octomap::OcTree(res); // initialize empty tree
+    pcl::PointCloud<pcl::PointXYZ> prev_pc; // one step buffer for clouds comparision
+    int count = 1; // counter for key of the vertex
+    threshold_distance=0.15; // thesholding for the distance travelled
+    std::vector<double> curr_odom; // vector for current value of odometry
+    this->octo_pub = nh.advertise<visualization_msgs::MarkerArray>("/map_vis", 1); // For octomap visualization
+    // Set origin  
+    if (count == 1)
 	{
-		/* code */
-		this->getData();
-		count++;
+	    /* code */
+	    this->getData();
+	    count++;
 	}
 
-
-	/* Initialize graph with first vertex as the starting point */
-	curr_odom.push_back(pose_x);
-	curr_odom.push_back(pose_y);
-	curr_odom.push_back(yaw);
-	
-	//cout<<"Initialize graph with first vertex as the starting point"<<endl;
-	this->initGraph(0,curr_odom); 
-
-	prev_pc = curr_pc;
-	
-	while(ros::ok())
+    
+    /* Initialize graph with first vertex as origin */
+    curr_odom.push_back(pose_x);
+    curr_odom.push_back(pose_y);
+    curr_odom.push_back(yaw);
+    
+    this->initGraph(0,curr_odom); 
+    
+    prev_pc = curr_pc;
+    std::vector<double> prev_odom;
+    while(ros::ok())
 	{
-		this->getData();	
-		double distance;
-		curr_odom[0] = pose_x;
-		curr_odom[1] = pose_y;
-		curr_odom[2] = yaw;
-		//cout<<"calculating prev odom value"<<endl;
-		boost::tie(vertex_It,vertex_End) = boost::vertices(gr);
-		
-		std::vector<double> prev_odom;
-		prev_odom = gr[*vertex_End-1].data;
-		//cout<<"Calculate distance"<<endl;
-		distance = this->calculateDist(curr_odom, prev_odom);
-		//cout<<distance<<endl;
-		
-		/* if distance is greater than threshold */
-		if(distance >= threshold_distance && curr_pc.size() > 0)
+	    this->getData();	
+	    double distance;// variable for distance travelled
+	    curr_odom[0] = pose_x;
+	    curr_odom[1] = pose_y;
+	    curr_odom[2] = yaw;
+	    //cout<<"calculating prev odom value"<<endl;
+	    boost::tie(vertex_It,vertex_End) = boost::vertices(gr);
+	    
+	    //std::vector<double> prev_odom;
+	    prev_odom = gr[*vertex_End-1].data;
+	    //cout<<"Calculate distance"<<endl;
+	    distance = this->calculateDist(curr_odom, prev_odom);
+	    //cout<<distance<<endl;
+	    
+	    /* if distance is greater than threshold  and new cloud is available*/
+	    if(distance >= threshold_distance && curr_pc.size() > 0)
 		{
-			/*  add vertex to graph  */
-			//cout<<"-->add vertex to graph"<<endl;
-			
-			this->addVertex(count,curr_odom);
-			/* calculate transform */
-			octomap::Pointcloud oct_pc;
-			tr_mat =this->estTrans(curr_pc,prev_pc);
-			for(int i = 0;i<curr_pc.points.size();i++){
-				oct_pc.push_back((float) curr_pc.points[i].x,(float) curr_pc.points[i].y,(float) curr_pc.points[i].z);
-			}
-			octomap::point3d origin(float(pose_x),float(pose_y),0.0f);
-			octomap::pose6d pose(float(pose_x),float(pose_y),0.0f,float(roll),float(pitch),float(yaw));
-			tree->insertPointCloud(oct_pc,origin,pose,-1,false,false);
-			std::cout<<"publishing octomap as MarkerArray"<<std::endl;
-			this->publishOctomap(tree);
-			boost::tie(vertex_i, vertex_e) = boost::vertices(gr);
-			this->addEdge(tr_mat,0.000);
-			this->detectLoopClosure(*(vertex_e-1));
-			prev_pc = curr_pc;
-			count++;
+		    /*  add vertex to graph  */
+		    //cout<<"-->add vertex to graph"<<endl;
+		    
+		    this->addVertex(count,curr_odom);
+		    /* calculate transform */
+		    tr_mat =this->estTrans(curr_pc,prev_pc);
+		    /* Create octomap point cloud from PCL point cloud to add to octomap */
+		    octomap::Pointcloud oct_pc;
+		    for(int i = 0;i<curr_pc.points.size();i++){
+			oct_pc.push_back((float) curr_pc.points[i].x,(float) curr_pc.points[i].y,(float) curr_pc.points[i].z);
+		    }
+		    octomap::point3d origin(float(pose_x),float(pose_y),0.0f);
+		    octomap::pose6d pose(float(pose_x),float(pose_y),0.0f,float(roll),float(pitch),float(yaw));
+		    tree->insertPointCloud(oct_pc,origin,pose,-1,false,false);
+		    std::cout<<"publishing octomap as MarkerArray"<<std::endl;
+		    this->publishOctomap(tree);
+		    boost::tie(vertex_i, vertex_e) = boost::vertices(gr);
+		    this->addEdge(tr_mat,0.000);
+		    this->detectLoopClosure(*(vertex_e-1));
+		    prev_pc = curr_pc;
+		    count++;
 		}
-		
-		ros::spinOnce();
+	    
+	    ros::spinOnce();
 	}
-		
-	}
+    
+}
 
 
 
