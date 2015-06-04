@@ -113,11 +113,12 @@ public:
 		
     /* main node process */ 
     Node(); //constructor
+    
     /* Get Odometry data */
     void odomSub();
     
     /* procees odometry data to get 2D pose */
-		void odomCallbk(nav_msgs::Odometry odom_data);
+    void odomCallbk(nav_msgs::Odometry odom_data);
     
     /* Get Point Cloud data */
     void cloudSub();
@@ -129,7 +130,10 @@ public:
     Eigen::Matrix4f estTrans(pcl::PointCloud<pcl::PointXYZ> first,pcl::PointCloud<pcl::PointXYZ> second);	
     /* Random sampling of points */
     pcl::PointCloud<pcl::PointXYZ> randomSample(pcl::PointCloud<pcl::PointXYZ> in_cld);
+    
+    /* Detecting loop closure */
     void detectLoopClosure(Vertex curr_v);
+    
     /* calculate distance travelled */ 
     double calculateDist(vector<double> curr_odom,vector<double> prev_odom);
     
@@ -144,11 +148,16 @@ public:
     
     /* Generic subscribing script */
     void getData();
+    
     /* For Octomap publishing and display on Rviz  */
     std_msgs::ColorRGBA getColorByHeight(double h);
     void publishOctomap(octomap::OcTree* map);
+    
     /* Evaluate validity of transform */
     double evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target);
+
+    /* Add optimizer in background */
+    // void toroGraphOptimizer();
 };
 
 /* Callback function for odom subscriber */	
@@ -284,7 +293,8 @@ void Node::detectLoopClosure(Vertex curr_v){
     for(;vertex_It!=vertex_End;++vertex_It){
 	// it is not equal to curr vertex and there is no edge already present
 	dist = this->calculateDist(gr[curr_v].data,gr[*vertex_It].data);
-	cout<<dist<<endl;
+	//cout<<dist<<endl;
+	//If the distance is less than threshold. Look for self loops as well.
 	if (!boost::edge(curr_v,(*vertex_It),gr).second && dist < 0.15 && dist != 0.0){
 	    cout<<"Loop Closure detected"<<endl;
 	    Eigen::Matrix4f transform  = this->estTrans(gr[*vertex_It].cld_data, gr[curr_v].cld_data);
@@ -420,6 +430,31 @@ double Node::evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target){
     double score = tve.validateTransformation (source, target, tr_mat);
     return score;		
 }
+
+/* Add optimization from TORO */
+/*
+void Node::toroGraphOptimizer(){
+    TreeOptimiser2 pg;
+    // load graph into pg 
+    if (!pg.load(filename.c_str(),overrideCovariances)){
+	std::cerr<<"Fatal Error"<<std::endl;
+    }
+    //display # of vertices and edges
+    std::cerr << "#nodes :"<< pg.vertices.size() << " #edges :"<< pg.edges.size() <<std::endl;
+    //intialize the tree parameters
+    pg.initializeTreeParameters();
+    pg.intializeOptimization();
+    
+    //Optimization
+    for(int i =0;i<iterations;i++){
+	pg.iterate();
+    }
+    std::cerr<< "Done optimization"<< std::endl;
+} 
+*/
+/* Function to update the probability value of octomap cells*/
+
+/* Display generated map*/
 
 /* main node process as well as constructor*/ 
 Node::Node()
