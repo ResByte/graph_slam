@@ -449,7 +449,7 @@ Node::Node()
 	this->initGraph(0,curr_odom); 
 
 	prev_pc = curr_pc;
-	
+	ros::Rate r(10); // 10 hz
 	while(ros::ok())
 	{
 		this->getData();	
@@ -492,6 +492,7 @@ Node::Node()
 		}
 		
 		ros::spinOnce();
+		r.sleep();
 	}
 		
 	}
