@@ -149,6 +149,7 @@ class Node{
                 /* For Octomap publishing and display on Rviz  */
 		std_msgs::ColorRGBA getColorByHeight(double h);
 		void publishOctomap(octomap::OcTree* map);
+                /* Evaluate validity of transform */
 		double evaluateValidTransform(pcl_cld_ptr source,pcl_cld_ptr target);
 	};
 	
@@ -449,7 +450,7 @@ Node::Node()
 	this->initGraph(0,curr_odom); 
 
 	prev_pc = curr_pc;
-	ros::Rate r(10); // 10 hz
+	
 	while(ros::ok())
 	{
 		this->getData();	
@@ -492,7 +493,6 @@ Node::Node()
 		}
 		
 		ros::spinOnce();
-		r.sleep();
 	}
 		
 	}
