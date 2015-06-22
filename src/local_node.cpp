@@ -452,9 +452,6 @@ void Node::toroGraphOptimizer(){
     std::cerr<< "Done optimization"<< std::endl;
 } 
 */
-/* Function to update the probability value of octomap cells*/
-
-/* Display generated map*/
 
 /* main node process as well as constructor*/ 
 Node::Node()
